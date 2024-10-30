@@ -50,7 +50,7 @@ router = Router()
 bot = Bot(token=TOKEN,)
 import html
 import re
-
+import traceback
 def clean_text(text):
     # Определяем разрешенные символы
     allowed_characters = r"[A-Za-z0-9\s*_\\-]"
@@ -80,6 +80,34 @@ def format_text_for_telegram(text):
     
     return formatted_text
 
+
+def split_text(text, max_length=3000):
+    # Проверяем, что текст не пустой
+    if not text:
+        return []
+
+    # Разбиваем текст на слова
+    words = text.split()
+    blocks = []
+    current_block = ""
+
+    for word in words:
+        # Проверяем, если добавление следующего слова превышает максимальную длину
+        if len(current_block) + len(word) + 1 > max_length:
+            # Если текущий блок не пустой, добавляем его в список блоков
+            if current_block:
+                blocks.append(current_block.strip())
+                current_block = ""
+        
+        # Добавляем слово в текущий блок
+        current_block += word + " "
+
+    # Добавляем последний блок, если он не пустой
+    if current_block:
+        blocks.append(current_block.strip())
+
+    return blocks
+
 async def send_message(chat_id: int, text: str):
     print('попали в отправитель')
     # try:
@@ -93,8 +121,18 @@ async def send_message(chat_id: int, text: str):
     text=format_text_for_telegram(text)
 
 
-    print(text)
-    await bot.send_message(chat_id=chat_id, text=text, parse_mode='HTML',)
+    # print(text)
+    # blocks=split_text(text=text)
+    # pprint(blocks)
+    # for i in blocks:
+    #     textInblock=i
+    try:
+        await bot.send_message(chat_id=chat_id, text=text, parse_mode='HTML',)
+    except Exception as e:
+        pprint(e)
+        error=traceback.format_exc()
+        await bot.send_message(chat_id=chat_id, text=error, parse_mode='HTML',)
+
     # await bot.send_message(chat_id=chat_id, text=text, parse_mode='Markdown',)
     # await bot.send_message(chat_id=chat_id, text=text,)
     # print('закончили отпралять')

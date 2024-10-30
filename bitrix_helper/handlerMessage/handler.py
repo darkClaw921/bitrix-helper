@@ -40,14 +40,29 @@ async def request_data_generate_answer(url):
     async with aiohttp.ClientSession() as session:
             async with session.post(url=url) as response:
                 return response
-       
+
+async def fetch_data(url, data):
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, json=data) as response:
+            return await response.json() 
         
 async def send_message(chat_id, text, messanger, IS_AUDIO=False):
+    data={
+        'chat_id':str(chat_id),
+        'text':text,
+        'messanger':messanger,
+        'isAudio':str(IS_AUDIO)
+        }
+    pprint(data)
     async with aiohttp.ClientSession() as session:
-        await session.post(f'http://{SENDER_MESSAGE_URL}/send_message/',
-                                params={'chat_id': chat_id, 'text': text,
-                                    'messanger': messanger, 
-                                    'isAudio': str(IS_AUDIO)})
+
+        # await session.post(f'http://{SENDER_MESSAGE_URL}/send_message/',
+        #                         params={'chat_id': chat_id, 'text': text,
+        #                             'messanger': messanger, 
+        #                             'isAudio': str(IS_AUDIO)})
+        await session.post(url=f'http://{SENDER_MESSAGE_URL}/send_message',
+                                json=data)
+                            
     return 0    
 
 
@@ -289,7 +304,21 @@ async def handler_in_message(chat_id: int, text: str, messanger: str,):
     pprint(params)
     # if messanger != 'site':
         # await send_message(chat_id, answer, messanger, IS_AUDIO)
-    await send_message(chat_id, answer, messanger, IS_AUDIO)
+    # try:
+    
+    await send_message(chat_id=chat_id, 
+                       text=answer, 
+                       messanger=messanger, 
+                       IS_AUDIO=IS_AUDIO)
+    # except:
+    #     # Пример использования
+    #     url = 'https://example.com/api'
+    #     data = {
+    #         'key1': 'value1',
+    #         'key2': 'value2',
+    #         # Добавьте другие данные
+    #     }
+    #     await fetch_data(url, data)
     # await request_data_param(f'http://{SENDER_MESSAGE_URL}/send_message', params)
     # add_message_to_history(chat_id, 'system', docs)
     add_message_to_history(chat_id, 'system', answer)

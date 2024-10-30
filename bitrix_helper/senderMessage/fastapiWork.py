@@ -71,10 +71,23 @@ async def is_voice_generate(isStart: bool):
     return {"message": f"Send voice {isStart}"}
 
 
+# Определяем модель данных для входящего JSON
+class Message(BaseModel):
+    chat_id: str
+    text: str
+    messanger: str
+    isAudio: str
 
 
 @app.post('/send_message')
-async def send_message(chat_id: int, text: str, messanger: str, isAudio: str):
+# async def send_message(chat_id: int, text: str, messanger: str, isAudio: str):
+async def send_message(message: Message):
+
+    chat_id=message.chat_id
+    text=message.text
+    messanger=message.messanger
+    isAudio=message.isAudio
+    
     # text=text.e('utf-8')
     SEND_VOISE = True if isAudio=='True' else False
     match messanger:
