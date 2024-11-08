@@ -29,6 +29,10 @@ sqlalchemy = "^2.0.30"
 pydub = "^0.25.1"
 numpy = "^2.0.1"
 scipy = "^1.14.0"
+google-auth = "^2.36.0"
+google-api-python-client = "^2.151.0"
+google-auth-httplib2 = "^0.2.0"
+google-auth-oauthlib = "^1.2.1"
 
 [build-system]
 requires = ["poetry-core"]

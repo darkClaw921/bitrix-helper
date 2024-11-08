@@ -77,6 +77,7 @@ class Message(BaseModel):
     text: str
     messanger: str
     isAudio: str
+    message_id:int
 
 
 @app.post('/send_message')
@@ -87,7 +88,7 @@ async def send_message(message: Message):
     text=message.text
     messanger=message.messanger
     isAudio=message.isAudio
-    
+    messageID=message.message_id 
     # text=text.e('utf-8')
     SEND_VOISE = True if isAudio=='True' else False
     match messanger:

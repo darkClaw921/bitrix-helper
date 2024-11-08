@@ -120,7 +120,7 @@ async def send_message(chat_id: int, text: str):
     # text=escape_markdown(text)
     text=format_text_for_telegram(text)
 
-
+  
     # print(text)
     # blocks=split_text(text=text)
     # pprint(blocks)

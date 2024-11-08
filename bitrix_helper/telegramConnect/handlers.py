@@ -26,7 +26,11 @@ from aiogram.types import ChatMemberUpdated
 from dotenv import load_dotenv
 import os
 
-# import postgreWork 
+# iimport aiohttp
+import asyncio
+import os
+from typing import Optional
+import postgreWork 
 
 from loguru import logger
 
@@ -94,6 +98,52 @@ async def voice_processing(msg: Message, state: FSMContext):
 
 
 
+
+async def send_video_for_transcription(
+    video_path: str,
+    api_url: str = "http://localhost:8000/transcribe",
+    user_id: str = "test_user",
+    webhook_url: str = "http://localhost:8001/webhook"  # URL куда будут отправлены результаты
+) -> Optional[dict]:
+    """
+    Отправляет видео файл на сервис транскрипции.
+    
+    :param video_path: Путь к локальному видео файлу
+    :param api_url: URL API транскрипции
+    :param user_id: ID пользователя
+    :param webhook_url: URL для получения результатов транскрипции
+    :return: Ответ от сервера или None в случае ошибки
+    """
+    if not os.path.exists(video_path):
+        raise FileNotFoundError(f"Файл не найден: {video_path}")
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            # Подготовка данных для отправки
+            data = aiohttp.FormData()
+            data.add_field('file',
+                          open(video_path, 'rb'),
+                          filename=os.path.basename(video_path))
+            data.add_field('user_id', user_id)
+            data.add_field('webhook_url', webhook_url)
+
+            # Отправка запроса
+            async with session.post(api_url, data=data) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    print(f"Успешно отправлено! Ответ: {result}")
+                    return result
+                else:
+                    print(f"Ошибка при отправке. Статус: {response.status}")
+                    print(await response.text())
+                    return None
+
+    except Exception as e:
+        print(f"Произошла ошибка: {str(e)}")
+        return None
+
+
+
 @router.message(Command('start'))
 async def send_welcome(msg: Message):
     nickname = msg.from_user.username
@@ -108,18 +158,32 @@ async def send_welcome(msg: Message):
 #Обработка сообщений
 @router.message()
 async def message(msg: Message, state: FSMContext):
-    # pprint(msg.__dict__)
+    pprint(msg.__dict__)
     # 241 реф ссылки #240
     userID = msg.from_user.id
     nickname = msg.from_user.username
     # print(msg.chat.id)
     # print(f"{msg.chat.id=}")
     text=msg.text
-    if text.startswith('@kgta_stud_lider_bot'):
-        text=text.replace('@kgta_stud_lider_bot ','')
+           
+
+    if text.startswith('@help_b24_bot'):
+        text=text.replace('@help_b24_bot','')
+        text=text.strip()
+        if text=='clear':
+            text='/clear'
+
+        if msg.reply_to_message is not None:
+            text= msg.reply_to_message.text + text 
+        
         # url=f'http://{IP_SERVER}:{PORT_HANDLER_MESSAGE}/handler_message'
         url=f'http://{HANDLER_MESSAGE_URL}/handler_message'
-        params={'chat_id':msg.chat.id, 'text':text, 'messanger':f'telegram', 'userID':userID}
+        params={'chat_id':msg.chat.id, 
+                'text':text, 
+                'messanger':f'telegram', 
+                'userID':userID,
+                'message_id':msg.message_id
+                }
         pprint(params)
         await request_data(url, params)
    

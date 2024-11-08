@@ -43,6 +43,7 @@ class Message(BaseModel):
     text: str
     messanger: str
     userID:int
+    message_id:int
     
     
 @app.post('/handler_message')
@@ -51,6 +52,8 @@ async def handler_message(message: Message):
     text = message.text
     messanger = message.messanger
     userID=message.userID
+    messageID=message.message_id
+
     typeMessage= 'command' if text.startswith('/') else 'message'
         
     if typeMessage=='command':
@@ -60,7 +63,10 @@ async def handler_message(message: Message):
                                  userID=userID)
         return {'message': 'Command'}
     
-    answer = await handler_in_message(chat_id, text, messanger)
+    answer = await handler_in_message(chat_id=chat_id, 
+                                      text=text, 
+                                      messanger=messanger,
+                                      messageID=messageID)
     return answer
 
 #работа с логами

@@ -11,6 +11,8 @@ import locale
 from datetime import datetime
 import time
 from chainCRMwork import Crm_chain_handler
+from googleWork import create_google_meet_event
+from telemostWork import create_conferense
 load_dotenv()
 
 PORT_GENERATE_ANSWER=os.getenv('PORT_GENERATE_ANSWER')
@@ -46,12 +48,16 @@ async def fetch_data(url, data):
         async with session.post(url, json=data) as response:
             return await response.json() 
         
-async def send_message(chat_id, text, messanger, IS_AUDIO=False):
+async def send_message(chat_id, text, messanger, 
+                       message_id=0,
+                       IS_AUDIO=False
+                       ):
     data={
         'chat_id':str(chat_id),
         'text':text,
         'messanger':messanger,
-        'isAudio':str(IS_AUDIO)
+        'isAudio':str(IS_AUDIO),
+        'message_id':message_id
         }
     pprint(data)
     async with aiohttp.ClientSession() as session:
@@ -95,8 +101,17 @@ async def handler_in_command(chat_id: int,
 # /quest <название листа в таблице> - собрать квест\n
 # /sends <сообщение> - рассылка всем пользователям""",
                         messanger, IS_AUDIO=False)
-    
-    
+    elif command =='/meet':
+        link=create_google_meet_event()
+        await send_message(chat_id, 
+                           f"""Вот ссылка на встречу. Свяжитесь с @darkClaw921 чтобы он вас впустил {link} """,
+                        messanger, IS_AUDIO=False)
+    elif command == '/conf':
+        await send_message(chat_id, 
+                           f"""Вот ссылка на конференцию. {create_conferense()} """,
+                        messanger, IS_AUDIO=False)    
+
+
     elif command == '/reset':
         await send_message(chat_id, 'Модель перезагружается...', messanger, IS_AUDIO=False)
 
@@ -233,7 +248,10 @@ async def classificate_message(text: str):
     answer= await request_data(f'http://{GENERATE_ANSWER_URL}/generate-answer', params)
     return answer
 
-async def handler_in_message(chat_id: int, text: str, messanger: str,):
+async def handler_in_message(chat_id: int, 
+                             text: str, 
+                             messanger: str,
+                             messageID:str):
     start_time = time.time()
 
     global IS_AUDIO, STATES, QUEST_MANAGER
@@ -252,9 +270,9 @@ async def handler_in_message(chat_id: int, text: str, messanger: str,):
     # pprint(msg.content_type)
     # chromaDBwork.query()
     print(text)
-    messagesList = [
-       {"role": "user", "content": text}
-      ]
+    # messagesList = [
+    #    {"role": "user", "content": text}
+    #   ]
     # answer = gpt.answer(promtPreparePost,messagesList)
     
 
@@ -300,7 +318,11 @@ async def handler_in_message(chat_id: int, text: str, messanger: str,):
     #     textDoc+=f'{doc["page_content"]}\n'
     # pprint(textDoc)
     
-    params = {'chat_id': chat_id, 'text': answer, 'messanger': messanger, 'isAudio': IS_AUDIO}
+    params = {'chat_id': chat_id, 
+              'text': answer, 
+              'messanger': messanger, 
+              'isAudio': IS_AUDIO,
+              'message_id':messageID}
     pprint(params)
     # if messanger != 'site':
         # await send_message(chat_id, answer, messanger, IS_AUDIO)
@@ -309,7 +331,8 @@ async def handler_in_message(chat_id: int, text: str, messanger: str,):
     await send_message(chat_id=chat_id, 
                        text=answer, 
                        messanger=messanger, 
-                       IS_AUDIO=IS_AUDIO)
+                       IS_AUDIO=IS_AUDIO,
+                       message_id=messageID)
     # except:
     #     # Пример использования
     #     url = 'https://example.com/api'

@@ -251,8 +251,11 @@ async def generate_answer(data: Generate):
 
 
     if model_index == 'searchWeb':
-        
-        answer= searchWeb.main(text)
+        #TODO использовать ответ на сообщение как историю в чате
+        pprint(history) 
+        # return {"answer": 'answer', 'isAudio': False, 'token': 'token', 'price': 'price', 'docs': 'docs'}
+        # 1/0
+        answer= searchWeb.search(history)
         increment_value_in_file()
         price='' 
         token=''
