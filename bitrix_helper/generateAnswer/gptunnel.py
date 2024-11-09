@@ -61,11 +61,13 @@ class GPTunnel:
         }
 
     
-    def generate_answer(self,promt:str, question:str, history:list[dict[str, str]])->str:
+    def generate_answer(self,promt:str, question:str, 
+                        history:list[dict[str, str]],
+                        max_token:int=5_000)->str:
         
         json_data = {
             'model': self.model,
-            'max_tokens': 5000,
+            'max_tokens': max_token,
             'useWalletBalance': True,
             'messages': [
                 {

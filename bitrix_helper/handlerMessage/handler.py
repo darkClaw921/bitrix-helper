@@ -91,15 +91,15 @@ async def handler_in_command(chat_id: int,
     global IS_AUDIO,STATES,QUEST_MANAGER
     if command == '/help':
         await send_message(chat_id, 
-                           """/start - начало работы\n/clear - очистить историю диалога\n""",
-#                            """/start - начало работы\n
-# /clear - очистить историю диалога\n
-# /startVoice- начать генерировать в голос\n
-# /stopVoice- остановить генерировать в голос\n
-# /sendvoice - начать общение голосом
-# /reset- перезагрузить модель\n
-# /quest <название листа в таблице> - собрать квест\n
-# /sends <сообщение> - рассылка всем пользователям""",
+                           """🧾 /start - начало работы\n
+🧾 /clear - очистить историю диалога\n
+🧾 /meet - создает ссылку на встречу в гугл (админ должен будет разрешить вход другим пользователям)\n
+🧾 /conf - создает ссылку на конференцию в телемосте\n
+🧾 /reset - перезагрузить модель\n
+💡 Вы можете отправить видео и промт в одном сообщении и я обработаю видео по ващему запросу\n
+💡 Вы можете спросить информацию о любом элементе битрикса, для этого просто напишите свой вопрос 
+""",
+
                         messanger, IS_AUDIO=False)
     elif command =='/meet':
         link=create_google_meet_event()
@@ -251,14 +251,19 @@ async def classificate_message(text: str):
 async def handler_in_message(chat_id: int, 
                              text: str, 
                              messanger: str,
-                             messageID:str):
+                             messageID:str,
+                             cmd:str='None',
+                             promt:str=None,
+                             userID:int=None):
     start_time = time.time()
 
     global IS_AUDIO, STATES, QUEST_MANAGER
-    add_message_to_history(chat_id,'user', text)
-    history = get_history(chat_id)
+    add_message_to_history(userID=chat_id,role='user', message=text)
+    history = get_history(userID=chat_id)
 
-    userID=chat_id
+    if userID is None:
+        userID=chat_id
+
     if len(history) > 15:
         clear_history(chat_id)
         history=history[-2:]
@@ -280,11 +285,17 @@ async def handler_in_message(chat_id: int,
     # classificateText= await classificate_message(text)
     # text= classificateText['text']
     # print(messagesList[
+    if promt is None:
+        promt=('https://docs.google.com/document/d/1b4igNNclOeUk5MDKdw17rvbLpb4nN1Gg4eq-vjsmRRY/edit?usp=sharing')
     
-    promt=('https://docs.google.com/document/d/1b4igNNclOeUk5MDKdw17rvbLpb4nN1Gg4eq-vjsmRRY/edit?usp=sharing')
+    # model_index='gptunnel'
+    model_index='searchWeb'
+
+    if cmd=='transcribe_video':
+        model_index='transcribe_video'
 
     params = {'text':text,'promt': promt, 
-              'history': history, 'model_index': 'searchWeb', 
+              'history': history, 'model_index': model_index, 
               'temp': 0.5, 'verbose': 0,
               'is_audio': IS_AUDIO,
               'userID': userID}

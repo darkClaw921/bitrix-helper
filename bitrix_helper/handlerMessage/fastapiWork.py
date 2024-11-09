@@ -44,8 +44,23 @@ class Message(BaseModel):
     messanger: str
     userID:int
     message_id:int
-    
-    
+
+class Command(BaseModel):
+    # "user_id": user_id,
+    # "text": full_text.strip(),
+    # 'prompt': promt,
+    # 'messanger': messanger,
+    # 'chat_id': chat_id,
+    # 'message_id': message_id  
+    user_id: int
+    text: str
+    messanger: str
+    chat_id: int
+    message_id:int
+    promt:str=None
+    cmd:str=None
+
+
 @app.post('/handler_message')
 async def handler_message(message: Message):
     chat_id = message.chat_id
@@ -66,8 +81,38 @@ async def handler_message(message: Message):
     answer = await handler_in_message(chat_id=chat_id, 
                                       text=text, 
                                       messanger=messanger,
-                                      messageID=messageID)
+                                      messageID=messageID,
+                                      userID=userID)
     return answer
+
+@app.post('/handler_command')
+async def handler_command(command: Command):
+    user_id = command.user_id
+    text = command.text
+    messanger = command.messanger
+    chat_id = command.chat_id
+    message_id=command.message_id
+    promt=command.promt
+    cmd=command.cmd
+    if cmd =='transcribe_video':
+        await handler_in_message(chat_id=chat_id, 
+                           text=text, 
+                           messanger=messanger,
+                           messageID=message_id,
+                           cmd=cmd,
+                           promt=promt,
+                           userID=user_id)
+    
+    
+
+    return {'message': 'Command'}
+
+
+
+
+
+
+
 
 #работа с логами
 

@@ -134,6 +134,7 @@ services:
       - TOKEN_BOT=${TOKEN_BOT}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - HANDLER_MESSAGE_URL=${HANDLER_MESSAGE_URL}:${PORT_HANDLER_MESSAGE}
+      - GENERATE_ANSWER_URL=${GENERATE_ANSWER_URL}:${PORT_GENERATE_ANSWER}
     
     build:
       context: ./bitrix_helper/telegramConnect

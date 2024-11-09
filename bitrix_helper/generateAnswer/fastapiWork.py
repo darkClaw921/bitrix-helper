@@ -1,5 +1,7 @@
 from bs4 import BeautifulSoup
 from fastapi import FastAPI, HTTPException,Form,Depends,Response, File, UploadFile
+
+from fastapi.responses import JSONResponse
 import requests
 from pprint import pprint
 import os
@@ -10,7 +12,7 @@ load_dotenv()
 from typing import Annotated
 from fastapi.staticfiles import StaticFiles
 from typing import List, Dict
-from fastapi import FastAPI, Request, Form, Depends, HTTPException
+from fastapi import FastAPI, Request, Form, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel,Field
@@ -22,8 +24,10 @@ from fastapi.responses import FileResponse
 from pathlib import Path
 from fastapi.middleware.cors import CORSMiddleware
 import aiohttp
+import tempfile
 from gptunnel import GPTunnel
 import searchWeb
+from helper import stream_to_file,process_video,is_supported_format,SUPPORTED_FORMATS 
 
 GPT_TUNNEL_API_KEY= os.getenv('GPT_TUNNEL_API_KEY')
 Gpt_tunnel=GPTunnel(api_key=GPT_TUNNEL_API_KEY)
@@ -240,7 +244,7 @@ async def generate_answer(data: Generate):
     # pprint(history)
     
     
-    pprint(data.__dict__)
+    # pprint(data.__dict__)
     text=data.text
     model_index=data.model_index
     temp=data.temp
@@ -252,7 +256,7 @@ async def generate_answer(data: Generate):
 
     if model_index == 'searchWeb':
         #TODO использовать ответ на сообщение как историю в чате
-        pprint(history) 
+        # pprint(history) 
         # return {"answer": 'answer', 'isAudio': False, 'token': 'token', 'price': 'price', 'docs': 'docs'}
         # 1/0
         answer= searchWeb.search(history)
@@ -286,8 +290,17 @@ async def generate_answer(data: Generate):
     
 
     promt=promt.replace('[date]',f'{formatted_date}')
-    pprint(data.__dict__)
+    # pprint(data.__dict__)
     
+    if model_index=='transcribe_video':
+        answer, token, price = Gpt_tunnel.generate_answer(promt=promt,
+                                   question=text,
+                                   history=history,
+                                   max_token=16_000) 
+        price='' 
+        token=''
+        docs=''
+
     if model_index=='gptunnel':
         params={
             'text':text,
@@ -316,8 +329,8 @@ async def generate_answer(data: Generate):
                                    question=text,
                                    history=history)
         docs= textDocs
-    else:
-        1
+    # else:
+    #     1
         # answer, token, price, docs =await gpt.answer_index(system=promt, topic=text, history=history, 
         #                                          search_index=MODELS_INDEX[model_index],
         #                                          temp=temp, verbose=0, )
@@ -358,6 +371,87 @@ def remove_links(text):
 
 
     # return {"info": f"File '{file.filename}' saved at '{file_location}'"}
+
+@app.post("/transcribe")
+async def transcribe_endpoint(
+    request: Request,
+    background_tasks: BackgroundTasks
+):
+    """
+    Эндпоинт для потоковой загрузки медиафайла и транскрибации
+    """
+    try:
+        # Получаем параметры из query params
+        params = request.query_params
+        user_id = params.get('user_id', 'default_user')
+        webhook_url = params.get('webhook_url')
+        filename = params.get('filename', 'video.mp4')
+        promt = params.get('promt')
+
+        messanger = params.get('messanger')
+        chat_id = params.get('chat_id')
+        message_id = params.get('message_id')
+
+        if not webhook_url:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "webhook_url is required"}
+            )
+
+        # Проверяем поддерживаемый формат файла
+        if not is_supported_format(filename):
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": "Неподдерживаемый формат файла",
+                    "supported_formats": SUPPORTED_FORMATS
+                }
+            )
+
+        # Создаем временный файл с правильным расширением
+        ext = Path(filename).suffix
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=ext)
+        file_path = temp_file.name
+        temp_file.close()
+
+        try:
+            # Потоковая запись файла
+            await stream_to_file(request, file_path)
+        except Exception as e:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            raise Exception(f"Ошибка при сохранении файла: {str(e)}")
+
+        # Запускаем обработку в фоновом режиме
+        background_tasks.add_task(process_video, file_path, user_id, webhook_url, promt, messanger, chat_id, message_id)
+
+        return JSONResponse(
+            content={
+                "status": "success",
+                "message": "Файл принят в обработку",
+                "user_id": user_id
+            }
+        )
+
+    except Exception as e:
+        if 'file_path' in locals() and os.path.exists(file_path):
+            os.remove(file_path)
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )
+
+@app.get("/formats")
+async def supported_formats():
+    """Возвращает список поддерживаемых форматов"""
+    return SUPPORTED_FORMATS
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
+
+
+
 
 
 
@@ -417,4 +511,13 @@ async def clear_logs():
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=int(PORT))
+    # uvicorn.run(app, host="0.0.0.0", port=int(PORT))
+    uvicorn.run(
+        app, 
+        host="0.0.0.0", 
+        port=int(PORT),
+        limit_concurrency=3,  # Ограничение одновременных подключений
+        limit_max_requests=100,  # Ограничение максимального количества запросов
+        timeout_keep_alive=300,  # Таймаут для keep-alive соединений
+       
+    ) 
