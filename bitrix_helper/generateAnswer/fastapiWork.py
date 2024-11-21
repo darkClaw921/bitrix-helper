@@ -28,7 +28,7 @@ import tempfile
 from gptunnel import GPTunnel
 import searchWeb
 from helper import stream_to_file,process_video,is_supported_format,SUPPORTED_FORMATS 
-
+from yandexSpeach import get_text_record
 GPT_TUNNEL_API_KEY= os.getenv('GPT_TUNNEL_API_KEY')
 Gpt_tunnel=GPTunnel(api_key=GPT_TUNNEL_API_KEY)
 
@@ -240,7 +240,7 @@ def prepare_answer_vector(docs:list):
 @app.get("/generate-answer/") 
 async def generate_answer(data: Generate):
     # a=Request.json()
-    # pprint(data)
+    pprint(data)
     # pprint(history)
     
     
@@ -261,8 +261,8 @@ async def generate_answer(data: Generate):
         # 1/0
         answer= searchWeb.search(history)
         increment_value_in_file()
-        price='' 
-        token=''
+        price=0.5 
+        token=0
         docs=''
         return {"answer": answer, 'isAudio': isAudio, 'token': token, 'price': price, 'docs': docs}
 
@@ -297,8 +297,8 @@ async def generate_answer(data: Generate):
                                    question=text,
                                    history=history,
                                    max_token=16_000) 
-        price='' 
-        token=''
+        price=price
+        token=token
         docs=''
 
     if model_index=='gptunnel':
@@ -423,8 +423,10 @@ async def transcribe_endpoint(
             raise Exception(f"Ошибка при сохранении файла: {str(e)}")
 
         # Запускаем обработку в фоновом режиме
-        background_tasks.add_task(process_video, file_path, user_id, webhook_url, promt, messanger, chat_id, message_id)
-
+        # background_tasks.add_task(process_video, file_path, user_id, webhook_url, promt, messanger, chat_id, message_id, 'local')
+        background_tasks.add_task(process_video, file_path, user_id, webhook_url, promt, messanger, chat_id, message_id, 'yandex')
+        # get_text_record(file_path)
+        
         return JSONResponse(
             content={
                 "status": "success",

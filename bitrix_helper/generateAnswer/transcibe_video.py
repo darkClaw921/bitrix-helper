@@ -31,11 +31,22 @@ def convert_to_wav(input_path: str, output_path: str) -> None:
     if proc.returncode != 0:
         raise RuntimeError(f"ffmpeg error: {proc.stderr.decode()}")
 
-def download_whisper_model(model_name="base"):
+def convert_to_mp3(input_path: str, output_path: str) -> None:
+    """
+    Конвертирует любой поддерживаемый формат до MP3.
+    """
+    command = ['ffmpeg', '-i', input_path, '-f', 'mp3', output_path]
+    proc = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if proc.returncode != 0:
+        raise RuntimeError(f"ffmpeg error: {proc.stderr.decode()}")
+
+
+# def download_whisper_model(model_name="base"):
+def download_whisper_model(model_name="turbo"):
     """
     Загружает модель Whisper если она еще не загружена.
     
-    :param model_name: Название модели ('tiny', 'base', 'small', 'medium', 'large')
+    :param model_name: Название модели ('tiny', 'base', 'small', 'medium', 'large','turbo')
     :return: Загруженная модель
     """
     # Создаем SSL контекст с проверкой сертификата
@@ -94,7 +105,7 @@ async def transcribe_video(file_path: str, timing_settings: Dict) -> List[Dict]:
                 'end': segment['end'],
                 'text': segment['text']
             })
-
+        
         # Удаление WAV-файла после транскрипции
         if os.path.exists(wav_path):
             os.remove(wav_path)

@@ -22,8 +22,8 @@ url = os.environ.get('POSTGRES_URL')
 # print(f'{db=}')
 
 # Создаем подключение к базе данных
-engine = create_engine(f'postgresql://{userName}:{password}@{url}:5432/{db}')
-# engine = create_engine(f'postgresql://postgres:postgres@localhost:5432/postgres')
+# engine = create_engine(f'postgresql://{userName}:{password}@{url}:5432/{db}')
+engine = create_engine(f'postgresql://postgres:postgres@localhost:5432/postgres')
 # engine = create_engine('mysql://username:password@localhost/games')
 
 
@@ -56,9 +56,6 @@ class Message(Base):
     payload = Column(String)
     type_chat = Column(String)
     text = Column(String)
-    status = Column(String)
-    messenger= Column(String)
-    role = Column(String)
 
 class Crm(Base):
     __tablename__ = 'Crm'
@@ -73,20 +70,6 @@ class Crm(Base):
     refresh_token = Column(String)
     access_token = Column(String)
     role = Column(String)
-
-class Transcription(Base):
-    __tablename__ = 'Transcription'
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    created_date = Column(DateTime)
-    user_id = Column(BigInteger)
-    prompt = Column(String)
-    text_transcription = Column(String)
-    payload = Column(String)
-    status = Column(String)
-    prepare_text = Column(String)
-    price_gen_text = Column(Float)
-    price_transcription = Column(Float)
-
 
 Base.metadata.create_all(engine)
 # Base.metadata.update_all(engine)
@@ -110,16 +93,7 @@ def add_new_user(userID:int, nickname:str):
         session.add(newUser)
         session.commit()
 
-def add_new_message(messageID:int, 
-                    chatID:int, 
-                    userID:int, 
-                    text:str, 
-                    type_chat:str=None,
-                    messenger:str=None,
-                    role:str=None,
-                    payload:str=None
-                    ):
-    
+def add_new_message(messageID:int, chatID:int, userID:int, text:str, type_chat:str,payload:str):
     with Session() as session:
         newMessage=Message(
             message_id=messageID,
@@ -128,11 +102,8 @@ def add_new_message(messageID:int,
             user_id=userID,
             text=text,
             type_chat=type_chat,
-            messenger=messenger,
-            role=role,
             payload=payload
         )
-
         session.add(newMessage)
         session.commit()
 
@@ -154,28 +125,6 @@ def add_new_crm(userID:int, domain:str, webhook:str, type_crm:str,
             session.add(newCrm)
             session.commit()
 
-def add_new_transcription(userID:int, prompt:str, 
-                          text_transcription:str,
-                          payload:str='', 
-                          status:str='', 
-                          prepare_text:str='',
-                          price_gen_text:float=0,
-                          price_transcription:float=0):
-    
-    with Session() as session:
-        newTranscription=Transcription(
-            created_date=datetime.now(),
-            user_id=userID,
-            prompt=prompt,
-            text_transcription=text_transcription,
-            payload=payload,
-            status=status,
-            prepare_text=prepare_text,
-            price_gen_text=price_gen_text,
-            price_transcription=price_transcription
-        )
-        session.add(newTranscription)
-        session.commit()
 
 
 

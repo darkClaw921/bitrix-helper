@@ -78,7 +78,7 @@ class Message(BaseModel):
     messanger: str
     isAudio: str
     message_id:int
-
+    meta:dict=None
 
 @app.post('/send_message')
 # async def send_message(chat_id: int, text: str, messanger: str, isAudio: str):
@@ -89,6 +89,7 @@ async def send_message(message: Message):
     messanger=message.messanger
     isAudio=message.isAudio
     messageID=message.message_id 
+    meta=message.meta
     # text=text.e('utf-8')
     SEND_VOISE = True if isAudio=='True' else False
     match messanger:
@@ -128,7 +129,8 @@ async def send_message(message: Message):
             return {"message": "Facebook not supported yet"}
         case 'instagram':
             return {"message": "Instagram not supported yet"}
-
+        case 'bitrix24':
+            await handlersBitrix.send_message(chat_id=chat_id, text=text, meta=meta)
         case _:
             return {"message": "Unsupported messenger"}
         

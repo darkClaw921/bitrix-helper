@@ -84,19 +84,7 @@ async def start_chain(chainName:str, webHook:str,
         
     pass
     
-@app.post("/query_collection")
-async def query_collection(text:str, 
-                        filter:dict, 
-                        needDistance:bool=False, 
-                        result:int=2) -> list | dict:
-    
-    if filter=={}: filter = None
-    queryAnswer=query(text=text, filter1=filter, 
-                        result=result)
-    if needDistance:
-        queryAnswer=prepare_query_chromadb(queryAnswer)
 
-    return queryAnswer 
 
 
 #работа с логами

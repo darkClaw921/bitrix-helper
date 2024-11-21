@@ -5,7 +5,7 @@ import aiohttp
 from dotenv import load_dotenv
 import os
 
-from postgreWork import get_all_user_ids, add_new_user, add_new_message
+import postgreWork
 import json
 import locale
 from datetime import datetime
@@ -13,6 +13,8 @@ import time
 from chainCRMwork import Crm_chain_handler
 from googleWork import create_google_meet_event
 from telemostWork import create_conferense
+import postgreWork
+from helper import calculate_async_recognition_cost 
 load_dotenv()
 
 PORT_GENERATE_ANSWER=os.getenv('PORT_GENERATE_ANSWER')
@@ -87,7 +89,8 @@ async def status_message(chat_id, text, messanger,userID, statusText):
 async def handler_in_command(chat_id: int, 
                              command: str, 
                              messanger: str,
-                             userID:str):
+                             userID:str,
+                             meta:dict=None):
     global IS_AUDIO,STATES,QUEST_MANAGER
     if command == '/help':
         await send_message(chat_id, 
@@ -96,6 +99,8 @@ async def handler_in_command(chat_id: int,
 🧾 /meet - создает ссылку на встречу в гугл (админ должен будет разрешить вход другим пользователям)\n
 🧾 /conf - создает ссылку на конференцию в телемосте\n
 🧾 /reset - перезагрузить модель\n
+🧾 /analDeal - запуск цепочки анализа сделки\n
+🧾 start - Зарегистрироваться в боте\n
 💡 Вы можете отправить видео и промт в одном сообщении и я обработаю видео по ващему запросу\n
 💡 Вы можете спросить информацию о любом элементе битрикса, для этого просто напишите свой вопрос 
 """,
@@ -133,6 +138,7 @@ async def handler_in_command(chat_id: int,
                            'Привет! Я - Специалист по документации Битрикс24. Чем я могу помочь?', 
                            messanger, IS_AUDIO)
         STATES[chat_id] = 'start'
+        postgreWork.add_new_user(userID=userID, nickname=nicname)
         # messanger
         # add_new_user(chat_id, nicname,1)
     elif command == '/analDeal':
@@ -254,7 +260,8 @@ async def handler_in_message(chat_id: int,
                              messageID:str,
                              cmd:str='None',
                              promt:str=None,
-                             userID:int=None):
+                             userID:int=None,
+                             meta:dict=None):
     start_time = time.time()
 
     global IS_AUDIO, STATES, QUEST_MANAGER
@@ -302,7 +309,7 @@ async def handler_in_message(chat_id: int,
     
     # перенеси сделку с id 3 в воронку холодные звонки 
     # [get_id_fields_deal, get_list_id_pipeline, update_deal] 
-    
+    pprint(params)
     try:
         # answer=await request_data(f'http://{IP_SERVER}:{PORT_GENERATE_ANSWER}/generate-answer', params)
         answer=await request_data(f'http://{GENERATE_ANSWER_URL}/generate-answer', params)
@@ -322,23 +329,62 @@ async def handler_in_message(chat_id: int,
     # print(type(answer))
     # pprint(answer)
     docs=answer['docs']
+    price=answer['price']
+    token=answer['token']
     answer=answer['answer']
+
     
     # textDoc=''
     # for doc in docs:
     #     textDoc+=f'{doc["page_content"]}\n'
     # pprint(textDoc)
     
-    params = {'chat_id': chat_id, 
+    paramsSend = {'chat_id': chat_id, 
               'text': answer, 
               'messanger': messanger, 
               'isAudio': IS_AUDIO,
               'message_id':messageID}
-    pprint(params)
+    pprint(paramsSend)
     # if messanger != 'site':
         # await send_message(chat_id, answer, messanger, IS_AUDIO)
     # try:
-    
+    if cmd=='transcribe_video':
+        duration=float(meta['duration'])
+        channels=int(meta['channels'])  
+        audio_fragments = [
+            {'duration': duration, 'channels': channels}
+        ]
+        priceTranscript=calculate_async_recognition_cost(audio_fragments)
+        postgreWork.add_new_transcription(userID=userID, 
+                                          prompt=params['promt'], 
+                                          text_transcription=params['text'], 
+                                          payload='', 
+                                          status='done', 
+                                          prepare_text=answer,
+                                          price_gen_text=price,
+                                          price_transcription=priceTranscript)
+    else:
+        postgreWork.add_new_message(messageID=messageID, 
+                                    chatID=chat_id, 
+                                    userID=userID, 
+                                    text=text, 
+                                    messenger=messanger,
+                                    role='user',
+                                    )
+        
+        postgreWork.add_new_message(messageID=messageID, 
+                                    chatID=chat_id, 
+                                    userID=userID, 
+                                    text=answer, 
+                                    messenger=messanger,
+                                    role='assistant',)
+        
+
+    postgreWork.update_token_price_for_user(userID=userID, tokenPrice=price)      
+    postgreWork.update_token_price_for_user(userID=userID, tokenPrice=priceTranscript)      
+    postgreWork.update_token_for_user(userID=userID, token=token)      
+
+        
     await send_message(chat_id=chat_id, 
                        text=answer, 
                        messanger=messanger, 

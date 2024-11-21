@@ -165,6 +165,12 @@ services:
       - GENERATE_ANSWER_URL=${GENERATE_ANSWER_URL}:${PORT_GENERATE_ANSWER}
       - PORT_HANDLER_MESSAGE=${PORT_HANDLER_MESSAGE}  
       - YANDEX_TELEMOST_TOKEN=${YANDEX_TELEMOST_TOKEN}  
+      - API_KEY_YANDEX_SPEACH=${API_KEY_YANDEX_SPEACH}  
+      - aws_access_key_id_dorin=${aws_access_key_id_dorin}  
+      - aws_secret_access_key_dorin=${aws_secret_access_key_dorin}  
+      - FOLDER_ID=${FOLDER_ID}  
+      - API_KEY_YANDEX=${API_KEY_YANDEX}  
+      - ID_API_KEY_YANDEX=${ID_API_KEY_YANDEX}  
 
 
   generate_answer:
@@ -191,7 +197,11 @@ services:
       - FOLDER_ID=${FOLDER_ID}
       - API_KEY_YANDEX=${API_KEY_YANDEX}
       - ID_API_KEY_YANDEX=${ID_API_KEY_YANDEX}
-
+      
+      - API_KEY_YANDEX_SPEACH=${API_KEY_YANDEX_SPEACH}  
+      - aws_access_key_id_dorin=${aws_access_key_id_dorin}  
+      - aws_secret_access_key_dorin=${aws_secret_access_key_dorin}  
+     
   sender_message:
     image: sender_message
     volumes:

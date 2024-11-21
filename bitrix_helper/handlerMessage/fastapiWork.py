@@ -19,6 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 # from fastapi import FastAPI, 
 # TOKEN_BOT = os.getenv('TOKEN_BOT_EVENT')
 from handler import handler_in_message,handler_in_command
+
 app = FastAPI(debug=False)
 load_dotenv()
 PORT = os.getenv('PORT_HANDLER_MESSAGE')
@@ -44,6 +45,9 @@ class Message(BaseModel):
     messanger: str
     userID:int
     message_id:int
+    # мета информация если нужна 
+    meta:dict=None
+
 
 class Command(BaseModel):
     # "user_id": user_id,
@@ -59,7 +63,7 @@ class Command(BaseModel):
     message_id:int
     promt:str=None
     cmd:str=None
-
+    meta:dict=None
 
 @app.post('/handler_message')
 async def handler_message(message: Message):
@@ -68,6 +72,8 @@ async def handler_message(message: Message):
     messanger = message.messanger
     userID=message.userID
     messageID=message.message_id
+    meta=message.meta
+    
 
     typeMessage= 'command' if text.startswith('/') else 'message'
         
@@ -75,14 +81,16 @@ async def handler_message(message: Message):
         await handler_in_command(chat_id=chat_id, 
                                  command=text, 
                                  messanger=messanger, 
-                                 userID=userID)
+                                 userID=userID,
+                                 meta=meta)
         return {'message': 'Command'}
     
     answer = await handler_in_message(chat_id=chat_id, 
                                       text=text, 
                                       messanger=messanger,
                                       messageID=messageID,
-                                      userID=userID)
+                                      userID=userID,
+                                      meta=meta)
     return answer
 
 @app.post('/handler_command')
@@ -94,6 +102,7 @@ async def handler_command(command: Command):
     message_id=command.message_id
     promt=command.promt
     cmd=command.cmd
+    meta=command.meta
     if cmd =='transcribe_video':
         await handler_in_message(chat_id=chat_id, 
                            text=text, 
@@ -101,8 +110,17 @@ async def handler_command(command: Command):
                            messageID=message_id,
                            cmd=cmd,
                            promt=promt,
-                           userID=user_id)
-    
+                           userID=user_id,
+                           meta=meta)
+    # await handler_in_message(chat_id=chat_id, 
+    #                     text=text, 
+    #                     messanger=messanger,
+    #                     messageID=message_id,
+    #                     cmd=cmd,
+    #                     promt=promt,
+    #                     userID=user_id,
+    #                     meta=meta)
+    # # await handler_command()
     
 
     return {'message': 'Command'}

@@ -143,7 +143,12 @@ async def send_welcome(msg: Message):
     nickname = msg.from_user.username
     text=msg.text
     url=f'http://{HANDLER_MESSAGE_URL}/handler_message'
-    params={'chat_id':msg.chat.id, 'text':text, 'messanger':f'telegram {nickname}'}
+    params={'chat_id':msg.chat.id, 
+            'text':text, 
+            'messanger':f'telegram {nickname}', 
+            'userID':msg.from_user.id, 
+            'message_id':msg.message_id, 
+           }
     await request_data(url, params)
 
 @router.message(Command('video'))  
@@ -192,7 +197,13 @@ async def message(msg: Message, state: FSMContext):
         if text=='clear':
             text='/clear'
 
-        
+        if text=='start':
+            text='/start'
+            msg.__dict__['text']=text
+            await send_welcome(msg)
+            return 0
+            
+
         if text.startswith( '/video'):
             
             await work_video(msg)
