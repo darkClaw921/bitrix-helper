@@ -51,6 +51,8 @@ bot = Bot(token=TOKEN,)
 import html
 import re
 import traceback
+import json
+
 def clean_text(text):
     # Определяем разрешенные символы
     allowed_characters = r"[A-Za-z0-9\s*_\\-]"
@@ -108,7 +110,7 @@ def split_text(text, max_length=3000):
 
     return blocks
 
-async def send_message(chat_id: int, text: str):
+async def send_message(chat_id: int, text: str, keyboard: dict = None):
     print('попали в отправитель')
     # try:
     #     await bot.send_message(chat_id=chat_id, text=text, parse_mode='MarkdownV2',)
@@ -126,8 +128,11 @@ async def send_message(chat_id: int, text: str):
     # pprint(blocks)
     # for i in blocks:
     #     textInblock=i
+
+    # if keyboard:
+    #     keyboard=KeyboardConverter.to_telegram(keyboard)
     try:
-        await bot.send_message(chat_id=chat_id, text=text, parse_mode='HTML',)
+        await bot.send_message(chat_id=chat_id, text=text, parse_mode='HTML',reply_markup=keyboard)
     except Exception as e:
         pprint(e)
         error=traceback.format_exc()
@@ -137,11 +142,16 @@ async def send_message(chat_id: int, text: str):
     # await bot.send_message(chat_id=chat_id, text=text,)
     # print('закончили отпралять')
 
-async def update_message(chatID:int, text:str,messageID:int):
+async def update_message(chatID:int, 
+                         text:str,
+                         messageID:int, 
+                         keyboard: dict = None):
+    
     await bot.edit_message_text(chat_id=chatID,
                                 message_id=messageID,
                                 text=text,
-                                parse_mode='Markdown')
+                                parse_mode='HTML',
+                                reply_markup=keyboard)
 
 # async def get_message(chatID:int, messageID:int,):
 #     await bot.get_webhook_info

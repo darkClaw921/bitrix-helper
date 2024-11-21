@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import FastAPI, HTTPException,Form,Depends
 import requests
 from pprint import pprint
@@ -15,25 +16,19 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel,Field
 from datetime import datetime
 from pprint import pformat, pprint
+from typing import Dict, Any, List
 # from chromaDBwork import add_to_collection, query, prepare_query_chromadb
 import json
 from tqdm import tqdm      
 # from fastapi import FastAPI, 
 # TOKEN_BOT = os.getenv('TOKEN_BOT_EVENT')
-from workBitrix import (
-    get_all_names_and_ids_fields_for_company,
-    get_all_names_and_ids_fiels_for_contact,
-    get_all_names_and_ids_fiels_for_deal,
-
-    check_fields_fill_company,
-    check_fields_fill_contact,
-    check_fields_fill_deal,
-)
+import handlerCrm
 import aiohttp
+import postgreWork
 
 app = FastAPI(debug=False)
 load_dotenv()
-PORT1 = os.getenv('PORT_VECTOR_DB_WORK')
+PORT = os.getenv('PORT_CRM_HANDLER')
 HOST = os.getenv('HOST')
 SENDER_MESSAGE_URL = os.getenv('SENDER_MESSAGE_URL')
 
@@ -44,8 +39,8 @@ app = FastAPI(
     version="1.0"
 )
 app.mount("/static", StaticFiles(directory="static/"), name="static")
-templates = Jinja2Templates(directory="templates")
-logs = []
+# templates = Jinja2Templates(directory="templates/", name="templates")
+# logs = []
 
 async def status_message(chat_id, text, messanger,userID, statusText):
     async with aiohttp.ClientSession() as session:
@@ -60,14 +55,18 @@ async def status_message(chat_id, text, messanger,userID, statusText):
 
 #TODO: При инцилизации обработчик сообщения завпрашивает список цепочек которые создаются через декоратор или как то еще 
 #один в один как в handleresMessage
-
-
-CHAINS={
-    'Аналитика заполненых полей сделок': [get_all_names_and_ids_fiels_for_deal, check_fields_fill_deal],
-    'Аналитика заполненых полей контактов': [get_all_names_and_ids_fiels_for_contact, check_fields_fill_contact],
-    'Аналитика заполненых полей компаний': [get_all_names_and_ids_fields_for_company, check_fields_fill_company],
-}
-
+class Message(BaseModel):
+    userID:int
+    meta:dict=None
+# CHAINS={
+#     'Аналитика заполненых полей сделок': [get_all_names_and_ids_fiels_for_deal, check_fields_fill_deal],
+#     'Аналитика заполненых полей контактов': [get_all_names_and_ids_fiels_for_contact, check_fields_fill_contact],
+#     'Аналитика заполненых полей компаний': [get_all_names_and_ids_fields_for_company, check_fields_fill_company],
+# }
+class DealRequest(BaseModel):
+    userID:int
+    dealID:int | None=None
+    filter:Dict[str,Any] | None=None
 
 @app.post("/start_chain")
 async def start_chain(chainName:str, webHook:str,
@@ -84,8 +83,22 @@ async def start_chain(chainName:str, webHook:str,
         
     pass
     
+@app.post('/crm/deals')
+async def handler_deal(request: DealRequest):
+    userID=request.userID
+    filter=request.filter
+    dealID=request.dealID
 
-
+    # webhook=os.getenv('WEBHOOK')
+    webhook=postgreWork.get_webhook(userID)
+    crm = handlerCrm.CrmHandler(crm_type='bitrix24', webhook=webhook)
+    
+    if filter:
+        deals=await crm.get_deals_by_filter(filter)
+    else:
+        deals=await crm.get_deal(dealID)
+    # pprint(deals)
+    return deals
 
 #работа с логами
 
@@ -142,5 +155,9 @@ async def clear_logs():
 if __name__ == "__main__":
     import uvicorn
     
-    uvicorn.run(app, host="0.0.0.0", port=int(PORT1))
-
+    uvicorn.run(app, host="0.0.0.0", port=int(PORT))
+    # filter={'>ID': 0}
+    # request=DealRequest(userID=1, filter=filter, dealID=4)
+    # a =asyncio.run(handler_deal(request))
+    # pprint(a)
+    

@@ -13,8 +13,29 @@ class BaseCrm(ABC):
         pass
     
     @abstractmethod
+    def get_deals_by_filter(self, filter: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Получить сделки по фильтру"""
+        pass
+
+    @abstractmethod
+    def get_entity(self, entity_type: str, entity_id: str) -> Dict[str, Any]:
+        """Получить сущность по ID"""
+        pass
+    
+    @abstractmethod
+    def get_entities_by_filter(self, entity_type: str, entity_id: str, filter: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Получить сущности по фильтру"""
+        pass
+
+
+    @abstractmethod
     def get_lead(self, lead_id: str) -> Dict[str, Any]:
         """Получить лид по ID"""
+        pass
+
+    @abstractmethod
+    def get_leads_by_filter(self, filter: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Получить лиды по фильтру"""
         pass
 
     @abstractmethod
@@ -60,4 +81,31 @@ class BaseCrm(ABC):
     @abstractmethod
     def get_all_fields_ids(self) -> Dict[str, List[str]]:
         """Получить ID всех полей"""
+        pass
+    
+
+
+    @abstractmethod
+    def update_deal(self, deal_id: str, fields: Dict[str, Any]) -> Dict[str, Any]:
+        """Обновить сделку"""
+        pass
+    
+    @abstractmethod
+    def update_lead(self, lead_id: str, fields: Dict[str, Any]) -> Dict[str, Any]:
+        """Обновить лид"""
+        pass
+
+    @abstractmethod
+    def update_contact(self, contact_id: str, fields: Dict[str, Any]) -> Dict[str, Any]:
+        """Обновить контакт"""
+        pass
+
+    @abstractmethod
+    def update_company(self, company_id: str, fields: Dict[str, Any]) -> Dict[str, Any]:
+        """Обновить компанию"""
+        pass
+
+    @abstractmethod
+    def update_entity(self, entity_type: str, entity_id: str, fields: Dict[str, Any]) -> Dict[str, Any]:
+        """Обновить сущность"""
         pass

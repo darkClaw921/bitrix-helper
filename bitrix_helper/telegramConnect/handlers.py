@@ -67,9 +67,17 @@ async def message(msg: CallbackQuery):
     userID = msg.from_user.id
     await msg.answer()
     callData = msg.data
-    # pprint(callData)
+    pprint(callData)
     logger.debug(f'{callData=}')
+    
 
+    await request_data(f'http://{HANDLER_MESSAGE_URL}/handler_callback', 
+            {'callback_data':callData, 
+            'message_id':msg.message.message_id, 
+            'chat_id':msg.message.chat.id, 
+            'userID':userID, 
+            'meta':{},
+            'messanger':'telegram'})
            
     return 0
 

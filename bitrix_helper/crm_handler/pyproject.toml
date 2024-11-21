@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "SIGNAL-bot"
+name = "bitrix-helper"
 version = "0.1.0"
 description = ""
 authors = ["Igor Gerasimov <gerasimov.igor.98@icloud.com>"]
@@ -7,13 +7,15 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
-fastapi = "^0.111.0"
 python-dotenv = "^1.0.1"
-aiogram = "^3.8.0"
-aiohttp = "^3.9.5"
 requests = "^2.32.3"
-telebot = "^0.0.5"
-fast-bitrix24 = "^1.8.2"
+fastapi = "^0.115.0"
+uvicorn = "^0.31.0"
+loguru = "^0.7.2"
+fast-bitrix24 = "^1.8.0"
+pybitrix24 = "^1.1.0"
+psycopg2-binary = "^2.9.10"
+sqlalchemy = "^2.0.30"
 
 
 [build-system]

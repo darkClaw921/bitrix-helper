@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from fast_bitrix24 import Bitrix
+# from fast_bitrix24 import Bitrix
 from postgreWork import update_crm_refresh_token, get_crm_by_user, get_crm_access_token
 
 WEBHOOK = os.getenv('WEBHOOK')

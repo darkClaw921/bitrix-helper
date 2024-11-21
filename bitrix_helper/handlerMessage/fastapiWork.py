@@ -18,7 +18,7 @@ from pprint import pformat, pprint
 from fastapi.middleware.cors import CORSMiddleware
 # from fastapi import FastAPI, 
 # TOKEN_BOT = os.getenv('TOKEN_BOT_EVENT')
-from handler import handler_in_message,handler_in_command
+from handler import handler_in_message,handler_in_command,handler_in_callback
 
 app = FastAPI(debug=False)
 load_dotenv()
@@ -65,6 +65,16 @@ class Command(BaseModel):
     cmd:str=None
     meta:dict=None
 
+class Callback(BaseModel):
+    callback_data: str
+    message_id: int
+    chat_id: int
+    userID: int
+    meta: dict = None
+    messanger: str
+    
+
+    
 @app.post('/handler_message')
 async def handler_message(message: Message):
     chat_id = message.chat_id
@@ -125,7 +135,20 @@ async def handler_command(command: Command):
 
     return {'message': 'Command'}
 
-
+@app.post('/handler_callback')
+async def handler_callback(callback: Callback):
+    callback_data = callback.callback_data
+    message_id = callback.message_id
+    chat_id = callback.chat_id
+    userID = callback.userID
+    meta = callback.meta
+    messanger = callback.messanger
+    await handler_in_callback(callback_data=callback_data, 
+                             message_id=message_id, 
+                             chat_id=chat_id, 
+                             userID=userID, 
+                             meta=meta,
+                             messanger=messanger)
 
 
 

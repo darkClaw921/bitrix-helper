@@ -137,7 +137,7 @@ def add_new_message(messageID:int,
         session.commit()
 
 def add_new_crm(userID:int, domain:str, webhook:str, type_crm:str, 
-                access_token:str=None, refresh_token:str=None):
+                access_token:str, refresh_token:str=None):
     with Session() as session:
         if not get_crm_by_user(userID):
             newCrm=Crm(
@@ -229,12 +229,6 @@ def update_crm_access_token(userID:int, access_token:str):
         crm.access_token=access_token
         session.commit()
 
-def update_crm_webhook(userID:int, webhook:str):
-    with Session() as session:
-        crm=session.query(Crm).filter(Crm.user_id==userID, Crm.status=='active').one()
-        crm.webhook=webhook
-        session.commit()
-
 
 
 
@@ -277,16 +271,11 @@ def get_crm_by_user(userID:int)->Crm:
         except:
             return None
 
-
-
-
-def check_crm_by_user(userID:int)->bool:
+def get_webhook(userID:int)->str:
     with Session() as session:
-        crms=session.query(Crm).filter(Crm.user_id==userID, Crm.status=='active').all()
-        if len(crms) > 0:
-            return True
-        else:
-            return False
+        crm=session.query(Crm).filter(Crm.user_id==userID, Crm.status=='active').one()
+        return crm.webhook
+
 
 def check_user(userID:int)->bool:
     with Session() as session:

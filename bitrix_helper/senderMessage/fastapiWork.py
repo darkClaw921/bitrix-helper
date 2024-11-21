@@ -19,6 +19,8 @@ from fastapi.responses import FileResponse
 import aiohttp
 # from workTelegram import send_audio,send_voice_aiogram
 import handlersTelegram
+from keyboardWork import KeyboardConverter
+# import handlersBitrix
 # from fastapi import FastAPI, 
 # TOKEN_BOT = os.getenv('TOKEN_BOT_EVENT')
 
@@ -79,6 +81,7 @@ class Message(BaseModel):
     isAudio: str
     message_id:int
     meta:dict=None
+    keyboard: dict = None  # Добавляем поле для клавиатуры
 
 @app.post('/send_message')
 # async def send_message(chat_id: int, text: str, messanger: str, isAudio: str):
@@ -88,8 +91,9 @@ async def send_message(message: Message):
     text=message.text
     messanger=message.messanger
     isAudio=message.isAudio
-    messageID=message.message_id 
+    messageID=int(message.message_id)
     meta=message.meta
+    keyboard = message.keyboard
     # text=text.e('utf-8')
     SEND_VOISE = True if isAudio=='True' else False
     match messanger:
@@ -110,7 +114,19 @@ async def send_message(message: Message):
         case 'telegram':
             print(f'{chat_id=}')
             print(f'{text=}')
-            await handlersTelegram.send_message(chat_id=chat_id, text=text)
+            if keyboard:
+                keyboard = KeyboardConverter.to_telegram(keyboard)
+            
+            if messageID != 0:
+                await handlersTelegram.update_message(chatID=chat_id, 
+                                                    messageID=messageID, 
+                                                    text=text, 
+                                                    keyboard=keyboard)
+            else:
+                await handlersTelegram.send_message(chat_id=chat_id, 
+                                                text=text, 
+                                                keyboard=keyboard,)
+            
 
         case 'webhook':
             if SEND_VOISE:
@@ -124,13 +140,27 @@ async def send_message(message: Message):
                 return {"message": "Voice send"}
             
         case 'whatsapp':
+            if keyboard:
+                converted_keyboard = KeyboardConverter.to_whatsapp(keyboard)
+                # Здесь должна быть логика отправки сообщения в WhatsApp с клавиатурой
+                return {"message": "Message with keyboard sent to WhatsApp"}
             return {"message": "Whatsapp not supported yet"}
         case 'facebook':
             return {"message": "Facebook not supported yet"}
         case 'instagram':
             return {"message": "Instagram not supported yet"}
         case 'bitrix24':
-            await handlersBitrix.send_message(chat_id=chat_id, text=text, meta=meta)
+            params = {
+                'chat_id': chat_id,
+                'text': text,
+                'meta': meta
+            }
+            
+            if keyboard:
+                converted_keyboard = KeyboardConverter.to_bitrix24(keyboard)
+                params['keyboard'] = converted_keyboard
+                
+            await handlersBitrix.send_message(**params)
         case _:
             return {"message": "Unsupported messenger"}
         

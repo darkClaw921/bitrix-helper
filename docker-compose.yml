@@ -142,6 +142,27 @@ services:
     depends_on:
       - postgres
 
+  crm_handler:
+    image: crm_handler
+    volumes:
+      - ./bitrix_helper/crm_handler:/app
+    
+    restart: unless-stopped
+    
+    environment:
+      
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_URL=${POSTGRES_URL}
+      - PORT_CRM_HANDLER=${PORT_CRM_HANDLER}
+
+    build:
+      context: ./bitrix_helper/crm_handler
+    
+    depends_on:
+      - postgres
+
   
   handler_message:
     image: handler_message
@@ -171,6 +192,7 @@ services:
       - FOLDER_ID=${FOLDER_ID}  
       - API_KEY_YANDEX=${API_KEY_YANDEX}  
       - ID_API_KEY_YANDEX=${ID_API_KEY_YANDEX}  
+      - CRM_HANDLER_URL=${CRM_HANDLER_URL}:${PORT_CRM_HANDLER}
 
 
   generate_answer:
