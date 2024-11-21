@@ -429,8 +429,10 @@ async def handler_in_callback(callback_data: str,
             
         case 'transc', action:
             if action == 'save_deal':
-                deals=testDeals
-
+                params={'filter': {'>ID': 0},
+                        'userID':userID,}
+                deals=await fetch_data(f'http://{CRM_HANDLER_URL}/crm/deals', params)
+                
                 paginator=DealPaginator(deals)
                 data=STATES[userID]
                 data['paginator']=paginator
@@ -450,6 +452,17 @@ async def handler_in_callback(callback_data: str,
                                f'Текст расшифровки сохранен в коментарии к сделки {deal_id}', 
                                messanger, 
                                IS_AUDIO=False)
+            # textTranscribe=meta['text']
+            data=STATES[userID]
+            textTranscribe=data['transcribe_text']
+            params={
+                    'userID':userID,
+                    'dealID':deal_id,
+                    'fields':{
+                        'COMMENTS':f'{textTranscribe}'
+                    }}
+            deals=await fetch_data(f'http://{CRM_HANDLER_URL}/crm/deals', params) 
+
         
         case _:
             pass
@@ -611,7 +624,8 @@ async def handler_in_message(chat_id: int,
         builder.add_button("Cохранить в боте", callback_data="transc:save_bot")
 
         keyboard=builder.get_keyboard()
-
+        data=STATES[userID]
+        data['transcribe_text']=f'Промт:\n{params["promt"]}\n\nОбработанный текст:\n{answer}\n\nПолный текст:\n{params['text']}'
     else:
         postgreWork.add_new_message(messageID=messageID, 
                                     chatID=chat_id, 
@@ -642,7 +656,7 @@ async def handler_in_message(chat_id: int,
                        text=answer, 
                        messanger=messanger, 
                        IS_AUDIO=IS_AUDIO,
-                       message_id=messageID,
+                    #    message_id=0,
                        keyboard=keyboard)
     # except:
     #     # Пример использования

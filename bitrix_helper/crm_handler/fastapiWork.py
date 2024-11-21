@@ -67,6 +67,7 @@ class DealRequest(BaseModel):
     userID:int
     dealID:int | None=None
     filter:Dict[str,Any] | None=None
+    fields:Dict[str,Any] | None=None
 
 @app.post("/start_chain")
 async def start_chain(chainName:str, webHook:str,
@@ -88,13 +89,15 @@ async def handler_deal(request: DealRequest):
     userID=request.userID
     filter=request.filter
     dealID=request.dealID
-
+    fields=request.fields
     # webhook=os.getenv('WEBHOOK')
     webhook=postgreWork.get_webhook(userID)
     crm = handlerCrm.CrmHandler(crm_type='bitrix24', webhook=webhook)
     
     if filter:
         deals=await crm.get_deals_by_filter(filter)
+    elif fields:
+        deals=await crm.update_deal(dealID, fields)
     else:
         deals=await crm.get_deal(dealID)
     # pprint(deals)
